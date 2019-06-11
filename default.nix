@@ -752,6 +752,22 @@ in
         '';
       };
     };
+
+    rspamd = {
+      password = mkOption {
+        type = types.nullOr types.string;
+        default = null;
+        example = "q1";
+        description = "The controller password for rspamd to use, see <link xlink:href='https://rspamd.com/doc/quickstart.html#setting-the-controller-password' />.";
+      };
+
+      enablePassword = mkOption {
+        type = types.nullOr types.string;
+        default = null;
+        example = "q2";
+        description = "The controller password allowing for data-changing operations for rspamd to use, see <link xlink:href='https://rspamd.com/doc/quickstart.html#setting-the-controller-password' />.";
+      };
+    };
   };
 
   imports = [

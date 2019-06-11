@@ -42,6 +42,9 @@ in
                 scan_mime_parts = false; # scan mail as a whole unit, not parts. seems to be needed to work at all
               }
           ''; };
+          "options.inc" = { text = ''
+              dynamic_conf = "/var/lib/rspamd/rspamd_dynamic"; # For allowing to change options in the web UI
+          ''; };
       };
 
       overrides = {
@@ -53,7 +56,6 @@ in
       };
 
       workers.rspamd_proxy = {
-        type = "rspamd_proxy";
         bindSockets = [{
           socket = "/run/rspamd/rspamd-milter.sock";
           mode = "0664";
@@ -70,15 +72,33 @@ in
         '';
       };
       workers.controller = {
-        type = "controller";
-        count = 1;
+        count = 1; # Do not spawn too many processes of this type
         bindSockets = [{
           socket = "/run/rspamd/worker-controller.sock";
           mode = "0666";
+        } {
+          # Use "ssh -L 8080:localhost:11334 youruser@example.com -N" to tunnel this securely to your browser's machine port 8080
+          socket = "localhost:11334";
         }];
         includes = [];
-      };
+        extraConfig = ''
+          ${lib.optionalString (cfg.rspamd.password != null) ''
+            # Password for normal commands
+            password = "${cfg.rspamd.password}";
+          ''}
+          ${lib.optionalString (cfg.rspamd.enablePassword != null) ''
+            # Password for privilleged commands
+            enable_password = "${cfg.rspamd.enablePassword}";
+          ''}
 
+          # static files for the web interface
+          static_dir = "''${WWWDIR}";
+
+          # For not having to enter the password on the command line
+          secure_ip = "::1";
+          secure_ip = "127.0.0.1";
+        '';
+      };
     };
     systemd.services.rspamd = {
       requires = (lib.optional cfg.virusScanning "clamav-daemon.service");
